@@ -39,7 +39,21 @@ curl https://<host>/health
 ```
 
 ## 5. What blocks me (needs your AWS access)
-Provisioning RDS/EC2 and deploying are **billed, hard-to-reverse** actions in YOUR account. To execute
+Provisioning EC2 and deploying are **billed, hard-to-reverse** actions in YOUR account. To execute
 them I need: AWS credentials (or you run the `aws`/SSH steps), the region, and a VPC/subnet choice. I
 will pause for sign-off before each create/deploy step. Until then, everything above is prepared and
-the app builds locally; only the live provisioning + `prisma migrate deploy` + PM2 start remain.
+the app builds locally; only the live provisioning + migrate + PM2 start remain.
+
+## 6. Decision change + current block (2026-06-23)
+- **DB: self-hosted PostgreSQL on the EC2 box** (user decision), NOT RDS. This is a deliberate
+  deviation from doc 10 §0 — it loses managed backups/failover; revisit before real users. The
+  user-data bootstrap installs postgresql15 + creates the `finman` DB/role locally on the instance.
+- **Target instance:** `t4g.micro` (ARM, ~$6/mo on-demand, free-tier-trial eligible) — cheapest micro.
+- **BLOCKED:** the `personal` profile's IAM user `surveillance-deployer` has an **explicit Deny** on
+  `ec2:RunInstances` (policy `surveillance-deployer-policy`) and no RDS access, so a new instance
+  cannot be launched with it. Unblock by loosening that policy, supplying a profile with EC2-launch
+  rights, or reusing the existing `surveillance` instance.
+- **Already prepared (free, nothing billed):** keypair `finman-deploy` (`~/.ssh/finman-deploy.pem`),
+  SG `sg-02c1cf6290f98b7fa` (22←deployer IP, 80/443←public), AMI `ami-0bba2fc7fccad71a7`,
+  bootstrap `user-data`, DB password (`~/.ssh/finman-db-password.txt`). One `run-instances` + the SSH
+  deploy completes Phase 0 once access is fixed.
