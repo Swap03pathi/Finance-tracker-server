@@ -13,7 +13,7 @@ export function makeMockLlm(opts: { disagree?: boolean } = {}): LlmInductionClie
       this.induceCalls++;
       // role each §..§ occurrence in order: first §AMT§ = amount; a §AMT§ after "bal" = balance.
       const roles: SlotRole[] = [];
-      const tokenRe = /§(AMT|DATE|ACCT|NUM|VPA)§/g;
+      const tokenRe = /§(AMT|DATE|ACCT|NUM|VPA|MERCHANT)§/g;
       let m: RegExpExecArray | null;
       let seenAmount = false;
       while ((m = tokenRe.exec(skeleton)) !== null) {
@@ -28,6 +28,7 @@ export function makeMockLlm(opts: { disagree?: boolean } = {}): LlmInductionClie
         } else if (fam === 'DATE') roles.push('date');
         else if (fam === 'ACCT') roles.push('account_tail');
         else if (fam === 'NUM') roles.push('ref');
+        else if (fam === 'MERCHANT') roles.push('merchant');
         else roles.push('none');
       }
       return { roles, merchantSpan: null };

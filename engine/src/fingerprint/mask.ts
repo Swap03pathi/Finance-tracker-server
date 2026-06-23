@@ -10,6 +10,7 @@ export const SLOTS = {
   acct: '§ACCT§',
   num: '§NUM§',
   vpa: '§VPA§',
+  merchant: '§MERCHANT§',
 } as const;
 
 const MONTHS = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec';
@@ -29,7 +30,16 @@ const RE_ACCT =
   /\b(?:x{2,}|\*{2,}|a\/c\s*[*.]*\s*|ending\s+|acct\.?\s*|account\s+|card\s+x*)\s*\d{2,6}\b/gi;
 // 4) VPAs: local@psp
 const RE_VPA = /\b[\w.\-]+@[a-z]+\b/gi;
-// 5) any remaining long-ish number run (ref/txn id, leftover tails) — privacy backstop
+// 5) merchant: the free-text span after an anchor preposition (at/to/for/towards) up to the next
+//    structural keyword or another anchor (doc 10 §2.1). The DLT boilerplate is the fingerprint key;
+//    the variable merchant becomes a wildcard slot so the same shape with a different merchant
+//    yields the SAME fingerprint. Runs AFTER amount/date/acct/vpa are already slot tokens.
+const MERCHANT_BOUNDARY = 'via|on|from|using|thru|through|ref|avl|bal|upi|info|txn|dated|at|to|for|towards|a\\/c|acct';
+const RE_MERCHANT = new RegExp(
+  String.raw`\b(at|to|for|towards)\s+(.+?)(?=\s+(?:${MERCHANT_BOUNDARY})\b|\s*§|[.,]|$)`,
+  'gi',
+);
+// 6) any remaining long-ish number run (ref/txn id, leftover tails) — privacy backstop
 const RE_LONGNUM = /\d{3,}/g;
 
 export function maskBody(body: string): string {
@@ -39,6 +49,7 @@ export function maskBody(body: string): string {
   s = s.replace(RE_DATE, SLOTS.date);
   s = s.replace(RE_ACCT, SLOTS.acct);
   s = s.replace(RE_VPA, SLOTS.vpa);
+  s = s.replace(RE_MERCHANT, (_m, prep) => `${prep} ${SLOTS.merchant}`); // merchant → wildcard slot
   s = s.replace(RE_LONGNUM, SLOTS.num); // final numeric sweep → nothing 3+ digits survives
   s = s.replace(/\s+/g, ' ').trim(); // collapse whitespace
   return s;

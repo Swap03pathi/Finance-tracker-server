@@ -19,12 +19,12 @@ export const CORPUS: CorpusMessage[] = [
   },
   {
     id: 'hdfc-upi-debit-02',
-    sender: 'IX-HDFCBK', // different operator prefix, SAME shape & merchant (shared fingerprint)
-    body: 'Rs.1,200.00 spent at Zomato via UPI from a/c **1234 on 03-06-26. Avl Bal Rs.10,800.00',
+    sender: 'IX-HDFCBK', // different operator prefix AND merchant — same shape => shared fingerprint (doc 10 §2.1)
+    body: 'Rs.1,200.00 spent at Amazon via UPI from a/c **1234 on 03-06-26. Avl Bal Rs.10,800.00',
     expect: {
       gate: 'pass',
       fingerprintGroup: 'hdfc-upi-debit',
-      fields: { amountPaise: 120000, direction: 'EXPENSE', modality: 'actual', balanceAfterPaise: 1080000, last4: '1234', merchant: 'Zomato' },
+      fields: { amountPaise: 120000, direction: 'EXPENSE', modality: 'actual', balanceAfterPaise: 1080000, last4: '1234', merchant: 'Amazon' },
     },
   },
   // ── SBI salary credit ──

@@ -11,11 +11,11 @@ import { makeMockLlm } from '../fixtures/mockLlm';
  * Section D — Fingerprinting & templates. 🔴
  */
 describe('D. Fingerprinting & templates 🔴', () => {
-  // Per doc 07 §7 the masker masks amounts/dates/tails/nums/VPAs but NOT the merchant, so a
-  // shared fingerprint requires the same shape AND merchant. The matrix's TMPL-01/02 vary only the
-  // amount, so these fixtures hold the merchant constant (Zomato) and vary amount/date/balance.
+  // doc 10 §2.1: the fingerprint must key on the DLT boilerplate and treat the merchant as a
+  // wildcard slot — so the SAME shape with DIFFERENT merchants must share a fingerprint. These
+  // fixtures deliberately vary the merchant (Zomato vs Amazon vs Uber) to exercise that.
   const hdfc1 = 'Rs.450.00 spent at Zomato via UPI from a/c **1234 on 02-06-26. Avl Bal Rs.12,000.00';
-  const hdfc2 = 'Rs.1,200.00 spent at Zomato via UPI from a/c **1234 on 03-06-26. Avl Bal Rs.10,800.00';
+  const hdfc2 = 'Rs.1,200.00 spent at Amazon via UPI from a/c **1234 on 03-06-26. Avl Bal Rs.10,800.00';
 
   it('TMPL-01 same shape, different amounts -> identical fingerprint', () => {
     expect(fingerprint(hdfc1)).toBe(fingerprint(hdfc2));
@@ -24,8 +24,16 @@ describe('D. Fingerprinting & templates 🔴', () => {
   it('TMPL-02 same shape via VM- and IX- -> identical fingerprint (sender-independent)', () => {
     // fingerprint is computed on the body only; routing/sender never enters it
     expect(fingerprint(hdfc1)).toBe(fingerprint(hdfc1));
-    const viaOther = 'Rs.999.00 spent at Zomato via UPI from a/c **1234 on 09-06-26. Avl Bal Rs.5,000.00';
+    const viaOther = 'Rs.999.00 spent at Uber via UPI from a/c **1234 on 09-06-26. Avl Bal Rs.5,000.00';
     expect(fingerprint(hdfc1)).toBe(fingerprint(viaOther));
+  });
+
+  it('TMPL-MERCHANT (doc 10 §2.1) same shape, different merchants -> SAME fingerprint', () => {
+    const zomato = 'Rs.450.00 spent at Zomato via UPI from a/c **1234 on 02-06-26. Avl Bal Rs.12,000.00';
+    const swiggy = 'Rs.600.00 spent at Swiggy via UPI from a/c **1234 on 05-06-26. Avl Bal Rs.9,000.00';
+    const bigBazaar = 'Rs.1,250.00 spent at Big Bazaar via UPI from a/c **1234 on 06-06-26. Avl Bal Rs.7,750.00';
+    expect(fingerprint(zomato)).toBe(fingerprint(swiggy));
+    expect(fingerprint(zomato)).toBe(fingerprint(bigBazaar));
   });
 
   it('TMPL-03 changed wording (A/B test) -> NEW fingerprint (no versioning)', () => {

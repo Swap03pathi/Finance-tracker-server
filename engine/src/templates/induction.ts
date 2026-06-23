@@ -9,7 +9,7 @@ import { Paise } from '../money';
  * slot plan → synthesise regex → round-trip validate vs the cluster → provisional → trust gate
  * (5–6 agreement runs) → trusted. No versioning. LLM is a template AUTHOR, never a per-message parser.
  */
-export type SlotRole = 'amount' | 'balance' | 'date' | 'account_tail' | 'ref' | 'none';
+export type SlotRole = 'amount' | 'balance' | 'date' | 'account_tail' | 'ref' | 'merchant' | 'none';
 export type TrustState = 'provisional' | 'trusted' | 'flagged';
 
 export interface InductionResult {
@@ -40,6 +40,7 @@ const FAMILY: Record<string, string> = {
   ACCT: String.raw`(?:card\s+)?(?:x{2,}|\*{2,}|a\/c\s*[*.]*\s*|ending\s+|account\s+)?\s*\d{2,6}`,
   NUM: String.raw`\d{3,}`,
   VPA: String.raw`[\w.\-]+@[a-z]+`,
+  MERCHANT: String.raw`.+?`,
 };
 
 function roleGroupName(role: SlotRole, family: string, index: number): string | null {
@@ -48,6 +49,7 @@ function roleGroupName(role: SlotRole, family: string, index: number): string | 
   if (role === 'date') return 'date';
   if (role === 'account_tail') return 'account_tail';
   if (role === 'ref') return 'ref';
+  if (role === 'merchant') return 'merchant';
   return null; // 'none' → non-capturing
 }
 
@@ -57,7 +59,7 @@ function escapeLiteral(s: string): string {
 
 /** Build a named-group regex from the masked skeleton + the LLM's role assignment. */
 export function synthesiseRegex(skeleton: string, roles: SlotRole[]): string {
-  const tokenRe = /§(AMT|DATE|ACCT|NUM|VPA)§/g;
+  const tokenRe = /§(AMT|DATE|ACCT|NUM|VPA|MERCHANT)§/g;
   let out = '';
   let last = 0;
   let i = 0;
@@ -78,7 +80,10 @@ export function synthesiseRegex(skeleton: string, roles: SlotRole[]): string {
   return `^${out}$`;
 }
 
-export function parseWithTemplate(t: Template, body: string): { amountPaise: Paise | null; balancePaise: Paise | null } | null {
+export function parseWithTemplate(
+  t: Template,
+  body: string,
+): { amountPaise: Paise | null; balancePaise: Paise | null; merchant: string | null } | null {
   const re = new RegExp(t.regex, 'i');
   const m = body.match(re);
   if (!m) return null;
@@ -86,6 +91,7 @@ export function parseWithTemplate(t: Template, body: string): { amountPaise: Pai
   return {
     amountPaise: g.amount ? parseAmount(g.amount).paise : null,
     balancePaise: g.balance ? parseAmount(g.balance).paise : null,
+    merchant: g.merchant ? g.merchant.trim() : null,
   };
 }
 
