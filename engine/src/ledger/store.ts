@@ -1,6 +1,12 @@
 import { Line, Instrument, LedgerEntry, LineKind, InstrumentKind } from '../types';
 import { Paise } from '../money';
-import { DEDUP_WINDOW_SEC } from './idempotentId';
+
+/**
+ * Window for SUGGESTING (not auto-merging) near-duplicate entries — distinct from the exact dedup
+ * key in idempotentId.ts. Wider, because a same-amount/same-merchant pair within a couple of minutes
+ * is worth flagging for the user to confirm.
+ */
+const SUSPECTED_DUP_WINDOW_SEC = 120;
 
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}-${++seq}`;
@@ -135,7 +141,7 @@ export class LedgerStore {
   }
 
   /** Suspected duplicates: same (line, amount, merchant) within window, distinct ids — SUGGEST only. */
-  suspectedDuplicates(windowSec = DEDUP_WINDOW_SEC): Array<[string, string]> {
+  suspectedDuplicates(windowSec = SUSPECTED_DUP_WINDOW_SEC): Array<[string, string]> {
     const pairs: Array<[string, string]> = [];
     const list = [...this.entries.values()];
     for (let i = 0; i < list.length; i++) {
