@@ -1,0 +1,19 @@
+{
+  "name": "@finman/shared-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "zod schemas + TS types for the device<->server sync API (doc 07 §5). Single source of truth for the wire contract.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "typescript": "^5.6.0"
+  }
+}

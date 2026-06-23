@@ -1,0 +1,22 @@
+{
+  "_comment": "Living rule-set (doc 02 §2.1, doc 07 §6). Seed lists — expand against the real SMS corpus. Data, not code: edit without a release. Match case-insensitively unless noted.",
+  "transactionVerbs": [
+    "debited", "credited", "spent", "withdrawn", "transferred", "transfer", "paid",
+    "received", "sent", "purchase", "deducted", "debit", "credit", "added", "loaded", "load"
+  ],
+  "failedContext": ["declined", "could not", "unsuccessful", "reversed"],
+  "rejectOtpPromoFailed": [
+    "otp", "one time password", "do not share", "code is", "offer", "sale",
+    "win", "won", "discount", "expires", "click", "claim", "declined",
+    "failed", "could not", "unsuccessful"
+  ],
+  "_rejectNotes": {
+    "cashback": "reject only when promotional; a real cashback credit is income",
+    "reversed": "context-dependent — reversal of a txn is a refund signal, not always a reject"
+  },
+  "future": ["will be debited", "scheduled", "due on", "autopay", "e-mandate", "standing instruction", "emi due"],
+  "conditional": ["has requested", "requesting", "collect request", "payment request"],
+  "hold": ["blocked", "on hold", "hold of", "pre-auth", "authorization"],
+  "mandate": ["mandate created", "mandate registered", "autopay set up"],
+  "refund": ["refund", "refunded", "reversal of", "credited back", "returned"]
+}

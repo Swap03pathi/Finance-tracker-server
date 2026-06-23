@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: finman-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: finman
+      POSTGRES_PASSWORD: finman
+      POSTGRES_DB: finman
+    ports:
+      - "5432:5432"
+    volumes:
+      - finman-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finman -d finman"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  finman-pgdata:

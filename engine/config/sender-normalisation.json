@@ -1,0 +1,6 @@
+{
+  "_comment": "DLT sender normalisation (doc 07 §6). Strip leading 2-char operator prefix + hyphen and trailing category suffix, normalise to the middle entity token (e.g. VM-HDFCBK-S -> HDFCBK).",
+  "operatorPrefixes": ["VM", "VX", "IX", "JD", "AX", "BP", "CP", "JM", "TX", "AD", "TD", "BZ", "BT"],
+  "categorySuffixes": ["S", "T", "P", "G"],
+  "personalSenderRule": "10-digit numeric sender => personal => DROP always"
+}

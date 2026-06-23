@@ -1,0 +1,23 @@
+{
+  "name": "@finman/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Framework-agnostic SMS parsing core: gating, fingerprint, parseAmount, redaction. Portable device<->server.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "decimal.js": "^10.4.3",
+    "fast-check": "^4.8.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.11",
+    "typescript": "^5.6.0"
+  }
+}

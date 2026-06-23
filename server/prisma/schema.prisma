@@ -1,0 +1,440 @@
+// AI Personal CFO — server-side system of record.
+// Faithful translation of docs/04-database-design.md. Raw SMS bodies are NOT in this DB
+// (they live device-local + the user's Google Drive). This holds only structured, derived data.
+//
+// Money: every monetary column is NUMERIC(14,2) (doc 07 §1 / §14 decision) — never a float.
+//        Read as Decimal (decimal.js) on the app side; format to ₹ only at presentation.
+// Naming: camelCase Prisma fields mapped to snake_case columns/tables per doc 04.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums (doc 04)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum LineKind {
+  bank
+  credit_pool
+  wallet
+  loan
+}
+
+enum InstrumentKind {
+  credit_card
+  debit_card
+  vpa
+  netbanking
+}
+
+enum CounterpartyType {
+  merchant
+  person
+  own_node
+  unknown
+}
+
+enum Direction {
+  EXPENSE
+  INCOME
+  TRANSFER
+  TOPUP
+}
+
+enum Modality {
+  actual
+  future
+  conditional
+  failed
+  hold
+  mandate
+}
+
+// source-aware from day one (doc 04 §1.6); aa/email/statement are future ingestion adapters.
+enum EntrySource {
+  sms
+  cash
+  manual
+  aa
+  email
+  statement
+}
+
+enum NetStatus {
+  active
+  reversed
+  is_reversal
+  settled
+}
+
+enum SettlementKind {
+  refund
+  reimbursement
+  split
+  self_transfer
+}
+
+enum SettlementStatus {
+  pending
+  partial
+  settled
+  written_off
+}
+
+enum LiabilityKind {
+  loan
+  card_emi
+}
+
+enum DebtDirection {
+  they_owe_me
+  i_owe_them
+}
+
+enum DebtStatus {
+  open
+  partial
+  closed
+  forgiven
+}
+
+enum DiscrepancyType {
+  missing_outflow
+  missing_inflow
+  suspected_emi
+  suspected_duplicate
+  suspected_refund
+  suspected_interest
+}
+
+enum DiscrepancyStatus {
+  open
+  resolved
+  ignored
+}
+
+enum DiscrepancyResolution {
+  labelled
+  manual_added
+  merged
+  netted
+  interest_confirmed
+  ignored
+}
+
+enum TrustState {
+  provisional
+  trusted
+  flagged
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core tables
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// doc 04 §3.1 — the Google identity owns everything.
+model User {
+  id                 String   @id @default(uuid()) @db.Uuid
+  googleSub          String   @unique @map("google_sub")
+  displayName        String?  @map("display_name")
+  email              String?
+  backfillWindowDays Int      @default(14) @map("backfill_window_days")
+  driveBackupEnabled Boolean  @default(false) @map("drive_backup_enabled")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  lines           Line[]
+  instruments     Instrument[]
+  tags            Tag[]
+  payees          Payee[]
+  ledgerEntries   LedgerEntry[]
+  settlements     Settlement[]
+  liabilities     Liability[]
+  personalDebts   PersonalDebt[]
+  discrepancies   Discrepancy[]
+  denylistSenders DenylistSender[]
+
+  @@map("users")
+}
+
+/// doc 04 §3.2 — the money-holding reality. The ONLY layer that reconciles.
+model Line {
+  id                       String    @id @default(uuid()) @db.Uuid
+  userId                   String    @map("user_id") @db.Uuid
+  kind                     LineKind
+  issuer                   String? // normalised entity, e.g. HDFCBK (null for some wallets)
+  displayName              String?   @map("display_name")
+  currentBalance           Decimal?  @map("current_balance") @db.Decimal(14, 2)
+  creditLimit              Decimal?  @map("credit_limit") @db.Decimal(14, 2)
+  availableCredit          Decimal?  @map("available_credit") @db.Decimal(14, 2)
+  isOwnNode                Boolean   @default(true) @map("is_own_node")
+  balanceIsSoft            Boolean   @default(false) @map("balance_is_soft")
+  accruesDailyInterest     Boolean   @default(false) @map("accrues_daily_interest")
+  interestRateDaily        Decimal?  @map("interest_rate_daily") @db.Decimal(12, 10) // learned credit ÷ balance
+  reconciliationConfidence Decimal?  @map("reconciliation_confidence") @db.Decimal(5, 4) // 0–1
+  anchorBalance            Decimal?  @map("anchor_balance") @db.Decimal(14, 2)
+  anchoredAt               DateTime? @map("anchored_at") @db.Timestamptz(6)
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instruments   Instrument[]
+  ledgerEntries LedgerEntry[]
+  discrepancies Discrepancy[]
+  liabilities   Liability[]   @relation("LiabilityRepaidViaLine")
+
+  @@index([userId])
+  @@index([userId, issuer])
+  @@map("lines")
+}
+
+/// doc 04 §3.3 — the access layer. Points at exactly ONE line.
+model Instrument {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  lineId      String         @map("line_id") @db.Uuid
+  kind        InstrumentKind
+  issuer      String?
+  last4       String? // nullable; key on (issuer,last4,kind) — NOT globally unique
+  vpa         String?
+  holder      String? // "self" / "wife add-on" — user-assigned
+  displayName String?        @map("display_name")
+  isConfirmed Boolean        @default(false) @map("is_confirmed")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  line          Line          @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  ledgerEntries LedgerEntry[]
+
+  @@index([userId, issuer, last4, kind]) // O(few) instrument attribution lookup
+  @@index([lineId])
+  @@map("instruments")
+}
+
+/// doc 04 §3.4 — fixed system taxonomy (~12 buckets). Seeded, read-mostly.
+model Category {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique // the fixed system buckets are distinct by name → idempotent seeding
+  isSystem Boolean @default(true) @map("is_system")
+
+  tags          Tag[]
+  payees        Payee[]
+  ledgerEntries LedgerEntry[]
+
+  @@map("categories")
+}
+
+/// doc 04 §3.5 — the user's personal taxonomy. Free-form, single-tag, rolls up to one category.
+model Tag {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  name          String
+  categoryId    Int      @map("category_id")
+  createdByUser Boolean  @default(true) @map("created_by_user")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category      @relation(fields: [categoryId], references: [id])
+  ledgerEntries LedgerEntry[]
+  defaultForPayees Payee[]    @relation("PayeeDefaultTag")
+
+  @@index([userId])
+  @@map("tags")
+}
+
+/// doc 04 §3.6 — UPI counterparty identity (per user). Learn-once; default label/tag auto-applies.
+model Payee {
+  id                String           @id @default(uuid()) @db.Uuid
+  userId            String           @map("user_id") @db.Uuid
+  normalizedKey     String           @map("normalized_key") // phone or PSP-stripped local-part
+  rawVpas           String[]         @map("raw_vpas") // all observed VPAs for this payee
+  displayName       String?          @map("display_name")
+  defaultCategoryId Int?             @map("default_category_id")
+  defaultTagId      String?          @map("default_tag_id") @db.Uuid
+  counterpartyType  CounterpartyType @default(unknown) @map("counterparty_type")
+  isUserConfirmed   Boolean          @default(false) @map("is_user_confirmed")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultCategory Category?    @relation(fields: [defaultCategoryId], references: [id])
+  defaultTag     Tag?          @relation("PayeeDefaultTag", fields: [defaultTagId], references: [id])
+  ledgerEntries  LedgerEntry[]
+
+  @@unique([userId, normalizedKey])
+  @@index([userId])
+  @@map("payees")
+}
+
+/// doc 04 §3.7 — every money movement. Real values live here; raw text does NOT.
+/// id is a device-generated UUID (uuidv5) for idempotent upsert (doc 07 §4).
+model LedgerEntry {
+  id              String     @id @default(uuid()) @db.Uuid
+  userId          String     @map("user_id") @db.Uuid
+  lineId          String     @map("line_id") @db.Uuid
+  instrumentId    String?    @map("instrument_id") @db.Uuid // null → "unattributed at issuer"
+  payeeId         String?    @map("payee_id") @db.Uuid
+  messageId       String?    @map("message_id") // device-side SMS id (links to raw on device/Drive)
+  direction       Direction
+  modality        Modality
+  amountCaptured  Decimal    @map("amount_captured") @db.Decimal(14, 2) // exactly parsed — NEVER overwritten
+  amountEffective Decimal    @map("amount_effective") @db.Decimal(14, 2) // after correction and/or settlements
+  balanceAfter    Decimal?   @map("balance_after") @db.Decimal(14, 2) // closing balance if SMS carried one
+  categoryId      Int?       @map("category_id")
+  tagId           String?    @map("tag_id") @db.Uuid // single tag (defaulted from payee, overridable)
+  merchantText    String?    @map("merchant_text")
+  txnTime         DateTime?  @map("txn_time") @db.Timestamptz(6)
+  receivedAt      DateTime?  @map("received_at") @db.Timestamptz(6) // may differ → reconcile by balance order
+  source          EntrySource @default(sms)
+  netStatus       NetStatus  @default(active) @map("net_status")
+  reversesEntryId String?    @map("reverses_entry_id") @db.Uuid
+  isCounted       Boolean    @default(false) @map("is_counted") // false for future/hold/mandate/failed/transfer/topup
+  templateId      String?    @map("template_id") @db.Uuid // which template parsed it (null for manual/cash)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  line       Line        @relation(fields: [lineId], references: [id])
+  instrument Instrument? @relation(fields: [instrumentId], references: [id])
+  payee      Payee?      @relation(fields: [payeeId], references: [id])
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  tag        Tag?        @relation(fields: [tagId], references: [id])
+  template   Template?   @relation(fields: [templateId], references: [id])
+
+  reversesEntry LedgerEntry?  @relation("EntryReversal", fields: [reversesEntryId], references: [id])
+  reversedBy    LedgerEntry[] @relation("EntryReversal")
+
+  settlementsAsBase   Settlement[] @relation("SettlementBase")
+  settlementsAsSettle Settlement[] @relation("SettlementSettle")
+  originOfLiabilities Liability[]  @relation("LiabilityOriginEntry")
+
+  @@index([userId, txnTime])
+  @@index([lineId])
+  @@index([payeeId])
+  @@index([userId, isCounted, netStatus])
+  @@map("ledger_entries")
+}
+
+/// doc 04 §3.8 — the linking engine. One row per (base ↔ settling) link.
+/// Powers refunds, reimbursements, splits, self-transfers.
+model Settlement {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  baseEntryId    String           @map("base_entry_id") @db.Uuid
+  settleEntryId  String?          @map("settle_entry_id") @db.Uuid // null for pure expected
+  kind           SettlementKind
+  expectedAmount Decimal?         @map("expected_amount") @db.Decimal(14, 2)
+  settledAmount  Decimal?         @map("settled_amount") @db.Decimal(14, 2)
+  status         SettlementStatus @default(pending)
+  expectedAt     DateTime?        @map("expected_at") @db.Timestamptz(6) // refund aging (5–30 days)
+  personalDebtId String?          @map("personal_debt_id") @db.Uuid
+  note           String?
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseEntry    LedgerEntry   @relation("SettlementBase", fields: [baseEntryId], references: [id])
+  settleEntry  LedgerEntry?  @relation("SettlementSettle", fields: [settleEntryId], references: [id])
+  personalDebt PersonalDebt? @relation(fields: [personalDebtId], references: [id])
+
+  @@index([userId])
+  @@index([baseEntryId])
+  @@index([settleEntryId])
+  @@map("settlements")
+}
+
+/// doc 04 §3.9 — loans & card EMIs: a liability with a repayment schedule. MVP: user-declared.
+model Liability {
+  id                String        @id @default(uuid()) @db.Uuid
+  userId            String        @map("user_id") @db.Uuid
+  kind              LiabilityKind
+  repaidViaLineId   String        @map("repaid_via_line_id") @db.Uuid // bank line (loan) or credit pool (card EMI)
+  originEntryId     String?       @map("origin_entry_id") @db.Uuid // original purchase (card EMI); null for cash loans
+  principal         Decimal?      @db.Decimal(14, 2)
+  tenureMonths      Int?          @map("tenure_months")
+  installmentAmount Decimal?      @map("installment_amount") @db.Decimal(14, 2)
+  remaining         Decimal?      @db.Decimal(14, 2)
+  isUserDeclared    Boolean       @default(true) @map("is_user_declared")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repaidViaLine Line         @relation("LiabilityRepaidViaLine", fields: [repaidViaLineId], references: [id])
+  originEntry   LedgerEntry? @relation("LiabilityOriginEntry", fields: [originEntryId], references: [id])
+
+  @@index([userId])
+  @@map("liabilities")
+}
+
+/// doc 04 §3.10 — informal lend/borrow (schema built, minimal v1 UI).
+model PersonalDebt {
+  id               String        @id @default(uuid()) @db.Uuid
+  userId           String        @map("user_id") @db.Uuid
+  counterpartyName String?       @map("counterparty_name")
+  direction        DebtDirection
+  principal        Decimal?      @db.Decimal(14, 2)
+  remaining        Decimal?      @db.Decimal(14, 2)
+  status           DebtStatus    @default(open)
+  originPurpose    String?       @map("origin_purpose")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settlements Settlement[]
+
+  @@index([userId])
+  @@map("personal_debt")
+}
+
+/// doc 04 §3.11 — reconciliation gaps as first-class objects. Acknowledged gaps, not zero gaps.
+model Discrepancy {
+  id         String                 @id @default(uuid()) @db.Uuid
+  userId     String                 @map("user_id") @db.Uuid
+  lineId     String                 @map("line_id") @db.Uuid
+  type       DiscrepancyType
+  magnitude  Decimal?               @db.Decimal(14, 2) // the ₹ gap
+  status     DiscrepancyStatus      @default(open)
+  resolution DiscrepancyResolution?
+  createdAt  DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  line Line @relation(fields: [lineId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([lineId])
+  @@map("discrepancies")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supporting tables
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// doc 04 §4.1 — shared template library (server). Shared across ALL users. No versioning.
+model Template {
+  id             String     @id @default(uuid()) @db.Uuid
+  fingerprint    String     @unique // structural hash (sender-normalised skeleton)
+  issuer         String? // for O(few) matching
+  regex          String // named-group extraction pattern
+  slotMap        Json       @map("slot_map") // group → amount/merchant/date/balance/last4/ref/type
+  trustState     TrustState @default(provisional) @map("trust_state")
+  validationRuns Int        @default(0) @map("validation_runs") // the 5–6-pass agreement count
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([issuer])
+  @@map("templates")
+}
+
+/// doc 04 §4.2 — per-user muted senders.
+model DenylistSender {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  senderNormalized String   @map("sender_normalized")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, senderNormalized])
+  @@index([userId])
+  @@map("denylist_senders")
+}

@@ -1,0 +1,33 @@
+{
+  "_comment": "Cold-start category hints (doc 07 §9). Big merchant aggregators → likely system category, used only as a first guess for a never-seen payee. User confirmation always wins. Data, not code.",
+  "merchants": {
+    "zomato": "Food",
+    "swiggy": "Food",
+    "dominos": "Food",
+    "mcdonalds": "Food",
+    "blinkit": "Food",
+    "zepto": "Food",
+    "bigbasket": "Food",
+    "uber": "Travel",
+    "ola": "Travel",
+    "rapido": "Travel",
+    "irctc": "Travel",
+    "makemytrip": "Travel",
+    "redbus": "Travel",
+    "amazon": "Shopping",
+    "flipkart": "Shopping",
+    "myntra": "Shopping",
+    "ajio": "Shopping",
+    "nykaa": "Shopping",
+    "netflix": "Entertainment",
+    "hotstar": "Entertainment",
+    "spotify": "Entertainment",
+    "bookmyshow": "Entertainment",
+    "pharmeasy": "Healthcare",
+    "1mg": "Healthcare",
+    "apollo": "Healthcare",
+    "groww": "Investments",
+    "zerodha": "Investments",
+    "upstox": "Investments"
+  }
+}

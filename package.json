@@ -1,0 +1,23 @@
+{
+  "name": "finman",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI Personal CFO — Android-first personal finance for India, built from transaction SMS parsed on-device.",
+  "workspaces": [
+    "packages/*",
+    "engine",
+    "server"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:validate": "npm run prisma:validate --workspace server",
+    "prisma:migrate": "npm run prisma:migrate --workspace server",
+    "seed": "npm run seed --workspace server"
+  }
+}

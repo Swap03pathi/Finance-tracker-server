@@ -1,0 +1,9 @@
+{
+  "_comment": "UPI PSP handle suffixes (doc 07 §6). Strip to find the local-part used as the payee normalized_key. Long list — maintained as data.",
+  "pspSuffixes": [
+    "@ybl", "@okhdfcbank", "@okaxis", "@okicici", "@oksbi", "@paytm",
+    "@ibl", "@axl", "@upi", "@apl", "@yapl", "@ptyes", "@pthdfc",
+    "@ptsbi", "@ptaxis", "@fbl", "@idfcbank", "@kotak", "@yespay",
+    "@waaxis", "@wahdfcbank", "@wasbi", "@jupiteraxis", "@fifederal"
+  ]
+}

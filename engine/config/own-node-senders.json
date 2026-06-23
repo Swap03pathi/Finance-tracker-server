@@ -1,0 +1,8 @@
+{
+  "_comment": "Seed own-node registry (doc 07 §9). Senders/issuers that are the user's OWN wallets — used to classify TOPUP/TRANSFER vs EXPENSE so the Bank→Paytm→Swiggy→order chain is ONE expense, not four. Learned further via self-transfer/top-up linking. Data, not code.",
+  "ownNodeIssuers": [
+    "PAYTM", "AMZNPE", "AMAZONPAY", "PHONEPE", "MOBIKWIK", "FREECHARGE",
+    "SLICE", "JUPITER", "FI", "OLAMONEY", "AIRTELMONEY", "JIOMONEY",
+    "AMAZONPAYLATER", "LAZYPAY", "SIMPL"
+  ]
+}

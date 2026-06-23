@@ -1,0 +1,40 @@
+# dependencies
+node_modules/
+.pnp.*
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+
+# env & secrets
+.env
+.env.local
+*.local
+
+# prisma
+server/prisma/.env
+
+# logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# editors
+.idea/
+.vscode/
+*.swp
+
+# flutter / android (mobile/)
+mobile/.dart_tool/
+mobile/.flutter-plugins*
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/
+
+# local SMS corpus — may contain real PII, NEVER commit
+engine/test/corpus/private/
+*.corpus.private.json
