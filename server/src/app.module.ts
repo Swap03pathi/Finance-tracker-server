@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
+import { LlmModule } from './llm/llm.module';
+import { EntriesModule } from './entries/entries.module';
+import { TemplatesModule } from './templates/templates.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 /**
- * Root module. Feature modules map 1:1 to the services in docs/03-backend-design.md
- * (auth, templates, induction, ledger, reconciliation, settlement, aggregation) and are
- * added phase-by-phase per docs/06-task-list.md. Phase 0 adds HealthModule (deploy check).
+ * Root module. Feature modules map 1:1 to the doc 03 services. Phase 1 wires auth, entries, templates
+ * (+ induction) and dashboard over the pure @finman/engine. Reconciliation/settlement/payee land in
+ * their later phases.
  */
 @Module({
-  imports: [PrismaModule, HealthModule],
+  imports: [PrismaModule, AuthModule, LlmModule, HealthModule, EntriesModule, TemplatesModule, DashboardModule],
 })
 export class AppModule {}

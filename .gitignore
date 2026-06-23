@@ -38,3 +38,6 @@ mobile/ios/
 # local SMS corpus — may contain real PII, NEVER commit
 engine/test/corpus/private/
 *.corpus.private.json
+
+# e2e embedded postgres temp
+*finman-e2e-pg*
