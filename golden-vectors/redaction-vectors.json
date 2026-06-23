@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "vectors": [
+    {
+      "input": "Rs.450.00 spent at Zomato via UPI from a/c **1234 on 02-06-26. Avl Bal Rs.12,000.00",
+      "skeleton": "§AMT§spent at §MERCHANT§ via upi from §ACCT§ on §DATE§. avl bal §AMT§",
+      "leaks": false
+    },
+    {
+      "input": "Rs.1,200.00 spent at Amazon via UPI from a/c **1234 on 03-06-26. Avl Bal Rs.10,800.00",
+      "skeleton": "§AMT§spent at §MERCHANT§ via upi from §ACCT§ on §DATE§. avl bal §AMT§",
+      "leaks": false
+    },
+    {
+      "input": "Your a/c XX3456 credited with Rs.65,000.00 on 01-06-26 by salary. Avl Bal Rs.85,000.00",
+      "skeleton": "your a/c §ACCT§ credited with §AMT§on §DATE§ by salary. avl bal §AMT§",
+      "leaks": false
+    },
+    {
+      "input": "INR 2,300.00 spent on ICICI Card XX9012 at Flipkart on 04-06-26.",
+      "skeleton": "§AMT§spent on icici §ACCT§ at §MERCHANT§ on §DATE§.",
+      "leaks": false
+    },
+    {
+      "input": "Rs 5,000 added to your Paytm Wallet from HDFC Bank a/c **1234.",
+      "skeleton": "§AMT§added to §MERCHANT§ from hdfc bank §ACCT§.",
+      "leaks": false
+    },
+    {
+      "input": "Rs.5,000.00 will be debited on 05-06-26 for your SIP via mandate.",
+      "skeleton": "§AMT§will be debited on §DATE§ for §MERCHANT§ via mandate.",
+      "leaks": false
+    },
+    {
+      "input": "Txn of Rs.1,200.00 on Card XX1234 was declined due to insufficient balance.",
+      "skeleton": "txn of §AMT§on §ACCT§ was declined due to §MERCHANT§.",
+      "leaks": false
+    },
+    {
+      "input": "Rs.3,000.00 blocked on Card XX1234 for hotel booking pre-authorization.",
+      "skeleton": "§AMT§blocked on §ACCT§ for §MERCHANT§.",
+      "leaks": false
+    },
+    {
+      "input": "Ramesh has requested Rs.500.00 via UPI. Approve in your app.",
+      "skeleton": "ramesh has requested §AMT§via upi. approve in your app.",
+      "leaks": false
+    },
+    {
+      "input": "Mandate created for Rs.2,000.00/month at Netflix via UPI Autopay.",
+      "skeleton": "mandate created for §MERCHANT§§/month at §MERCHANT§ via upi autopay.",
+      "leaks": false
+    },
+    {
+      "input": "Rs 500 sent, please confirm",
+      "skeleton": "§AMT§sent, please confirm",
+      "leaks": false
+    },
+    {
+      "input": "Your OTP is 432189, do not share with anyone.",
+      "skeleton": "your otp is §NUM§, do not share with anyone.",
+      "leaks": false
+    },
+    {
+      "input": "Flat 50% off! Shop now and pay Rs 999. Limited offer.",
+      "skeleton": "flat 50% off! shop now and pay §AMT§. limited offer.",
+      "leaks": false
+    },
+    {
+      "input": "You won a cashback Rs 50 credited! Claim now.",
+      "skeleton": "you won a cashback §AMT§edited! claim now.",
+      "leaks": false
+    },
+    {
+      "input": "Balance is Rs 5,000 in your a/c XX1234.",
+      "skeleton": "balance is §AMT§in your a/c §ACCT§.",
+      "leaks": false
+    },
+    {
+      "input": "Rs 450 spent at Zomato",
+      "skeleton": "§AMT§spent at §MERCHANT§",
+      "leaks": false
+    },
+    {
+      "input": "₹1,23,456.78 debited",
+      "skeleton": "§AMT§debited",
+      "leaks": false
+    },
+    {
+      "input": "INR 2.5 crore credited",
+      "skeleton": "§AMT§ credited",
+      "leaks": false
+    },
+    {
+      "input": "Rs 1.2L spent",
+      "skeleton": "§AMT§ spent",
+      "leaks": false
+    },
+    {
+      "input": "Rupees 450 paid",
+      "skeleton": "§AMT§paid",
+      "leaks": false
+    },
+    {
+      "input": "Amount 9,999/- withdrawn",
+      "skeleton": "amount 9,§NUM§/- withdrawn",
+      "leaks": false
+    },
+    {
+      "input": "debited Rs0.50",
+      "skeleton": "debited §AMT§",
+      "leaks": false
+    },
+    {
+      "input": "UPI Ref no 412345678901",
+      "skeleton": "upi ref no §NUM§",
+      "leaks": false
+    }
+  ]
+}

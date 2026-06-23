@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "vectors": [
+    {
+      "input": "Rs.450.00 spent at Zomato via UPI from a/c **1234 on 02-06-26. Avl Bal Rs.12,000.00",
+      "fingerprint": "d31e436e11ccaa6bd5edc4bae66d19eac9549e156922782e138b1cc875ab4f27",
+      "skeleton": "§AMT§spent at §MERCHANT§ via upi from §ACCT§ on §DATE§. avl bal §AMT§"
+    },
+    {
+      "input": "Rs.600.00 spent at Swiggy via UPI from a/c **1234 on 05-06-26. Avl Bal Rs.9,000.00",
+      "fingerprint": "d31e436e11ccaa6bd5edc4bae66d19eac9549e156922782e138b1cc875ab4f27",
+      "skeleton": "§AMT§spent at §MERCHANT§ via upi from §ACCT§ on §DATE§. avl bal §AMT§"
+    },
+    {
+      "input": "Rs.1,250.00 spent at Big Bazaar via UPI from a/c **1234 on 06-06-26. Avl Bal Rs.7,750.00",
+      "fingerprint": "d31e436e11ccaa6bd5edc4bae66d19eac9549e156922782e138b1cc875ab4f27",
+      "skeleton": "§AMT§spent at §MERCHANT§ via upi from §ACCT§ on §DATE§. avl bal §AMT§"
+    },
+    {
+      "input": "Your a/c XX3456 credited with Rs.65,000.00 on 01-06-26 by salary. Avl Bal Rs.85,000.00",
+      "fingerprint": "31874722f64daa7326119f19b5e9ac5d34a94fb772e59b106876f9ea4ebb2b93",
+      "skeleton": "your a/c §ACCT§ credited with §AMT§on §DATE§ by salary. avl bal §AMT§"
+    },
+    {
+      "input": "INR 2,300.00 spent on ICICI Card XX9012 at Flipkart on 04-06-26.",
+      "fingerprint": "f11096636d3112bf0e9044f12e20f286a1989c49b762fbe599fca333524f7d0b",
+      "skeleton": "§AMT§spent on icici §ACCT§ at §MERCHANT§ on §DATE§."
+    }
+  ]
+}

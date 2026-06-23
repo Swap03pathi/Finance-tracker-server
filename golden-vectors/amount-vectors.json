@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "vectors": [
+    {
+      "input": "Rs 450",
+      "paise": 45000,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs.1,234.50",
+      "paise": 123450,
+      "confidence": "high"
+    },
+    {
+      "input": "INR 1,23,456.78",
+      "paise": 12345678,
+      "confidence": "high"
+    },
+    {
+      "input": "₹1.2L",
+      "paise": 12000000,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 1.2 lakh",
+      "paise": 12000000,
+      "confidence": "high"
+    },
+    {
+      "input": "2.5Cr",
+      "paise": 2500000000,
+      "confidence": "high"
+    },
+    {
+      "input": "2.5 crore",
+      "paise": 2500000000,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 1.2k",
+      "paise": 120000,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs450",
+      "paise": 45000,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 0.50",
+      "paise": 50,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 1,00,000",
+      "paise": 10000000,
+      "confidence": "high"
+    },
+    {
+      "input": "₹0.10",
+      "paise": 10,
+      "confidence": "high"
+    },
+    {
+      "input": "₹0.20",
+      "paise": 20,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 0.01",
+      "paise": 1,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 2.5Cr",
+      "paise": 2500000000,
+      "confidence": "high"
+    },
+    {
+      "input": "Rs 4,5O.00",
+      "paise": null,
+      "confidence": "low"
+    }
+  ]
+}
