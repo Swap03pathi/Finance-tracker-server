@@ -4,7 +4,7 @@ module.exports = {
   apps: [
     {
       name: 'finman-server',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js', // nest build emits under dist/src (prisma/ sits outside src)
       cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',

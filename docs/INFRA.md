@@ -44,6 +44,28 @@ them I need: AWS credentials (or you run the `aws`/SSH steps), the region, and a
 will pause for sign-off before each create/deploy step. Until then, everything above is prepared and
 the app builds locally; only the live provisioning + migrate + PM2 start remain.
 
+## 7. LIVE deployment (2026-06-24)
+Deployed via the `finman-deployer` IAM user (EC2-launch policy attached).
+- **Instance:** `i-0516c39ee91f3800a` (t4g.micro, AL2023 arm64), region us-east-1, public IP `18.206.195.183`.
+- **Stack:** NestJS under **PM2** (`finman-server`, script `dist/src/main.js`) behind **nginx** (:80 → :3000),
+  on **self-hosted PostgreSQL 15** (local). All three services `systemctl enable`d (survive reboot).
+- **DB:** password generated ON the box (never in user-data/metadata); stored in `~/app/.db-env` +
+  `~/app/server/.env` (chmod 600, untracked). Migration `0_init` applied (14 tables) + categories seeded.
+- **Verified:** `curl http://18.206.195.183/health` → `{"status":"ok","db":"up"}`; `/v1/dashboard` → 401;
+  `/v1/auth/google {}` → 400 (zod).
+- **Code delivery:** `git archive HEAD` tarball scp'd (no node_modules/secrets), built on-box.
+
+### Production fixes applied (vs the generic runbook)
+- `pg_hba.conf`: localhost rules switched `ident` → `md5` (Prisma P1010 was an ident-auth failure).
+- PG15 schema lockdown: `ALTER SCHEMA public OWNER TO finman` + grants.
+- DB host pinned to `127.0.0.1` (avoid `localhost`→`::1`).
+- `LLM_PROVIDER=mock` (no OpenAI key yet); Google verify is real but unused until a client signs in.
+
+### Still pending for production-grade
+- **TLS/HTTPS:** currently HTTP only. Needs a domain + cert (certbot) or a self-signed cert; SG already
+  opens 443. doc 10's "over HTTPS" exit is met functionally over HTTP pending a domain.
+- Tighten the deploy IAM policy to tag-scoped; rotate/disable the `finman-deployer` access key when idle.
+
 ## 6. Decision change + current block (2026-06-23)
 - **DB: self-hosted PostgreSQL on the EC2 box** (user decision), NOT RDS. This is a deliberate
   deviation from doc 10 §0 — it loses managed backups/failover; revisit before real users. The
