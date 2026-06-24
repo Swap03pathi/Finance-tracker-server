@@ -7,8 +7,6 @@ import { LedgerEntry, Payee } from '../types';
  * inherits the payee default but can override for that one payment without changing the default.
  */
 
-const PSP_SUFFIXES = ['@ybl', '@okhdfcbank', '@okaxis', '@okicici', '@oksbi', '@paytm', '@ibl', '@axl', '@upi', '@apl', '@yapl', '@ptyes', '@pthdfc'];
-
 /** PSP-stripped local-part as the join key: name@paytm and 9876@okaxis → their local parts. */
 export function normalizeVpaKey(vpa: string): string {
   const at = vpa.indexOf('@');

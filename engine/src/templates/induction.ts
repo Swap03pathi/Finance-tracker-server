@@ -43,7 +43,7 @@ const FAMILY: Record<string, string> = {
   MERCHANT: String.raw`.+?`,
 };
 
-function roleGroupName(role: SlotRole, family: string, index: number): string | null {
+function roleGroupName(role: SlotRole): string | null {
   if (role === 'amount') return 'amount';
   if (role === 'balance') return 'balance';
   if (role === 'date') return 'date';
@@ -69,7 +69,7 @@ export function synthesiseRegex(skeleton: string, roles: SlotRole[]): string {
     out += escapeLiteral(skeleton.slice(last, m.index));
     const family = m[1];
     const role = roles[i] ?? 'none';
-    let name = roleGroupName(role, family, i);
+    let name = roleGroupName(role);
     if (name && used.has(name)) name = `${name}_${i}`;
     if (name) used.add(name);
     out += name ? `(?<${name}>${FAMILY[family]})` : `(?:${FAMILY[family]})`;

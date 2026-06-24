@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import type { SlotRole } from '@finman/engine';
 import { InductionPlan, LlmProvider } from './llm.provider';
@@ -10,7 +10,6 @@ import { InductionPlan, LlmProvider } from './llm.provider';
  */
 @Injectable()
 export class OpenAiProvider extends LlmProvider {
-  private readonly log = new Logger(OpenAiProvider.name);
   private readonly client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   private readonly model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 

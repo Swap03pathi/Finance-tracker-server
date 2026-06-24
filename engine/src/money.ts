@@ -32,18 +32,4 @@ export function paiseToRupees(paise: Paise): Decimal {
   return new Decimal(paise).dividedBy(100);
 }
 
-/** Presentation only: paise -> "₹1,23,456.78" (Indian grouping). */
-export function formatPaise(paise: Paise): string {
-  const rupees = paiseToRupees(Math.abs(paise)).toFixed(2);
-  const [intPart, decPart] = rupees.split('.');
-  // Indian grouping: last 3 digits, then groups of 2.
-  const lastThree = intPart.slice(-3);
-  const rest = intPart.slice(0, -3);
-  const grouped = rest
-    ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + lastThree
-    : lastThree;
-  const sign = paise < 0 ? '-' : '';
-  return `${sign}₹${grouped}.${decPart}`;
-}
-
 export { Decimal };
