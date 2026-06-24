@@ -19,6 +19,6 @@
     "prisma:validate": "npm run prisma:validate --workspace server",
     "prisma:migrate": "npm run prisma:migrate --workspace server",
     "seed": "npm run seed --workspace server",
-    "golden:gen": "server/node_modules/.bin/ts-node --compiler-options '{\"module\":\"commonjs\",\"esModuleInterop\":true,\"resolveJsonModule\":true,\"skipLibCheck\":true}' engine/scripts/gen-golden-vectors.ts"
+    "golden:gen": "ts-node --compiler-options '{\"module\":\"commonjs\",\"esModuleInterop\":true,\"resolveJsonModule\":true,\"skipLibCheck\":true}' engine/scripts/gen-golden-vectors.ts"
   }
 }

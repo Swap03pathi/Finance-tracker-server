@@ -12,7 +12,9 @@ import { parseAmount } from '../src/amount/parseAmount';
 import { fingerprint } from '../src/fingerprint/fingerprint';
 import { maskBody } from '../src/fingerprint/mask';
 import { gate } from '../src/gating/gate';
+import { induceTemplate, parseWithTemplate } from '../src/templates/induction';
 import { CORPUS } from '../test/fixtures/corpus';
+import { makeMockLlm } from '../test/fixtures/mockLlm';
 
 const OUT = path.resolve(__dirname, '../../golden-vectors');
 
@@ -74,4 +76,21 @@ write(
     const r = gate(m.sender, m.body);
     return { sender: m.sender, body: m.body, admit: r.admit, reason: r.reason };
   }),
+);
+
+// apply-template: induce one template (mock LLM) for an HDFC-UPI-debit cluster, then record the
+// synthesised regex + extraction for each body. The Dart port applies the SAME regex → same fields.
+const TEMPLATE_CLUSTER = [
+  'Rs.450.00 spent at Zomato via UPI from a/c **1234 on 02-06-26. Avl Bal Rs.12,000.00',
+  'Rs.1,200.00 spent at Amazon via UPI from a/c **1234 on 03-06-26. Avl Bal Rs.10,800.00',
+];
+const { template } = induceTemplate('HDFCBK', TEMPLATE_CLUSTER, makeMockLlm());
+write(
+  'template-vectors.json',
+  template
+    ? TEMPLATE_CLUSTER.map((body) => {
+        const r = parseWithTemplate(template, body);
+        return { body, regex: template.regex, amountPaise: r?.amountPaise ?? null, balancePaise: r?.balancePaise ?? null, merchant: r?.merchant ?? null };
+      })
+    : [],
 );
