@@ -6,6 +6,7 @@ import { LlmModule } from './llm/llm.module';
 import { EntriesModule } from './entries/entries.module';
 import { TemplatesModule } from './templates/templates.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DevModule } from './dev/dev.module';
 
 /**
  * Root module. Feature modules map 1:1 to the doc 03 services. Phase 1 wires auth, entries, templates
@@ -13,6 +14,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
  * their later phases.
  */
 @Module({
-  imports: [PrismaModule, AuthModule, LlmModule, HealthModule, EntriesModule, TemplatesModule, DashboardModule],
+  imports: [PrismaModule, AuthModule, LlmModule, HealthModule, EntriesModule, TemplatesModule, DashboardModule, DevModule],
 })
 export class AppModule {}

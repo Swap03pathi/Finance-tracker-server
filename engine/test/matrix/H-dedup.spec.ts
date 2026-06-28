@@ -42,14 +42,20 @@ describe('H. Double-counting (dedup) 🔴', () => {
     expect(store.list()).toHaveLength(2);
   });
 
-  it('DUP-07b no-ref fallback: two ₹50 30s apart -> TWO; co-arriving dual-SMS -> ONE', () => {
-    const base = { userId: 'u1', lineKey: 'HDFCBK|1234', direction: 'EXPENSE', amountPaise: 5000 };
-    // genuine purchases 30s apart, no reference → small bucket keeps them distinct
-    expect(logicalEntryId({ ...base, epochSec: 1_700_000_000 }))
-      .not.toBe(logicalEntryId({ ...base, epochSec: 1_700_000_030 }));
-    // dual-SMS for one event arriving ~3s apart, no reference → same small bucket → collapse
-    expect(logicalEntryId({ ...base, epochSec: 1_700_000_000 }))
-      .toBe(logicalEntryId({ ...base, epochSec: 1_700_000_003 }));
+  it('DUP-07b no-ref fallback keys on CONTENT: identical text (dual-capture, diff timestamps) -> ONE', () => {
+    const base = { userId: 'u1', lineKey: 'HDFCBK|1234', direction: 'EXPENSE', amountPaise: 5000, epochSec: 0 };
+    const body = 'Rs.50.00 spent at Chai Point from a/c **1234. Avl Bal Rs.900.00';
+    // same SMS captured by the real-time receiver AND the catch-up sweep, with different timestamps →
+    // the content hash collapses them to one id (this is the double-count bug fix)
+    expect(logicalEntryId({ ...base, epochSec: 1_700_000_000, content: body }))
+      .toBe(logicalEntryId({ ...base, epochSec: 1_700_000_045, content: body }));
+  });
+
+  it('DUP-07c no-ref fallback: two genuine ₹50 with DIFFERENT text -> TWO', () => {
+    const base = { userId: 'u1', lineKey: 'HDFCBK|1234', direction: 'EXPENSE', amountPaise: 5000, epochSec: 0 };
+    // real bank SMS for two purchases differ (balance/time) → different content hash → two entries
+    expect(logicalEntryId({ ...base, content: 'Rs.50 at Chai Point. Avl Bal Rs.900.00' }))
+      .not.toBe(logicalEntryId({ ...base, content: 'Rs.50 at Chai Point. Avl Bal Rs.850.00' }));
   });
 
   it('DUP-03 wallet load then wallet spend -> load=transfer, spend=expense (not both)', () => {

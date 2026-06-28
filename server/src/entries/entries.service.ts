@@ -85,6 +85,7 @@ export class EntriesService {
       modality: r.modality,
       amountCaptured: r.amountCaptured.toString(),
       amountEffective: r.amountEffective.toString(),
+      categoryId: r.categoryId,
       merchantText: r.merchantText,
       txnTime: r.txnTime?.toISOString() ?? null,
       isCounted: r.isCounted,

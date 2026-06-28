@@ -46,20 +46,27 @@ export interface LogicalKeyParts {
   lineKey: string; // issuer+last4/vpa resolving the line
   direction: string;
   amountPaise: number;
-  /** epoch seconds of the txn; used only for the no-reference fallback bucket */
+  /** epoch seconds of the txn; only the LAST-RESORT fallback (no reference AND no content) buckets on it */
   epochSec: number;
   /** the bank's transaction reference (UPI ref / RRN / txn id) — exact dedup key when present */
   reference?: string | null;
+  /** the raw SMS body — used only to derive a stable content-hash dedup key (stays on device) */
+  content?: string | null;
 }
 
 /**
- * The id used for upsert. PRIMARY: when a bank reference exists, key on (user|line|reference) — exact,
- * so dual-SMS + retries of the SAME event collapse and two genuinely-distinct txns never do. FALLBACK:
- * with no reference, key on (user|line|dir|amount|small-bucket).
+ * The id used for upsert. PRIMARY: a bank reference → (user|line|reference), exact. NEXT: no reference
+ * → (user|line|content-hash), so the SAME message captured twice (real-time receiver + catch-up sweep,
+ * possibly with different timestamps) collapses to one, while two genuinely-different texts stay
+ * distinct. LAST RESORT (no reference, no content): a small time bucket.
  */
 export function logicalEntryId(parts: LogicalKeyParts): string {
   if (parts.reference) {
     return uuidv5(`${parts.userId}|${parts.lineKey}|ref:${parts.reference}`);
+  }
+  if (parts.content != null && parts.content.length > 0) {
+    const contentHash = createHash('sha1').update(parts.content).digest('hex');
+    return uuidv5(`${parts.userId}|${parts.lineKey}|content:${contentHash}`);
   }
   const bucket = Math.floor(parts.epochSec / DEDUP_FALLBACK_WINDOW_SEC);
   return uuidv5(
