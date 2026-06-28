@@ -21,6 +21,10 @@ export const InstrumentKind = z.enum(['credit_card', 'debit_card', 'vpa', 'netba
 export const AuthGoogleInput = z.object({ idToken: z.string().min(10) });
 export type AuthGoogleInput = z.infer<typeof AuthGoogleInput>;
 
+/** Pilot dev sign-in (doc 12 deviation, env-gated by ALLOW_DEV_AUTH) — replaced by Google in Phase 8. */
+export const AuthDevInput = z.object({ deviceKey: z.string().min(8).max(128) });
+export type AuthDevInput = z.infer<typeof AuthDevInput>;
+
 // ── entries (idempotent upsert) ──────────────────────────────────────────────
 /** How the device tells the server which line/instrument an entry belongs to (auto-discovery key). */
 export const LineHint = z.object({

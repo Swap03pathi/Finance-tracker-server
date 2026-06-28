@@ -42,6 +42,19 @@ describe('Phase 1 server API (e2e, real embedded Postgres) 🔴', () => {
 
   const http = () => request(app.getHttpServer());
 
+  it('AUTH-DEV gated off by default → 404', async () => {
+    delete process.env.ALLOW_DEV_AUTH;
+    await http().post('/v1/auth/dev').send({ deviceKey: 'device-abc-123' }).expect(404);
+  });
+
+  it('AUTH-DEV when enabled → JWT that authorises a protected route', async () => {
+    process.env.ALLOW_DEV_AUTH = 'true';
+    const res = await http().post('/v1/auth/dev').send({ deviceKey: 'device-abc-123' }).expect(201);
+    expect(res.body.token).toBeTruthy();
+    await http().get('/v1/dashboard').set('Authorization', `Bearer ${res.body.token}`).expect(200);
+    delete process.env.ALLOW_DEV_AUTH;
+  });
+
   it('AUTH-01 valid Google token → session JWT', async () => {
     const res = await http().post('/v1/auth/google').send({ idToken: 'fake:user-1' }).expect(201);
     expect(res.body.token).toBeTruthy();

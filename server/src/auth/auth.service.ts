@@ -22,4 +22,16 @@ export class AuthService {
     const token = this.jwt.sign({ sub: user.id });
     return { token, user: { id: user.id, email: user.email } };
   }
+
+  /** Pilot dev sign-in: a stable device key maps to a user (no Google). Env-gated by the controller. */
+  async authenticateDev(deviceKey: string): Promise<{ token: string; user: { id: string; email: string | null } }> {
+    const sub = `dev:${deviceKey}`;
+    const user = await this.prisma.user.upsert({
+      where: { googleSub: sub },
+      create: { googleSub: sub },
+      update: {},
+    });
+    const token = this.jwt.sign({ sub: user.id });
+    return { token, user: { id: user.id, email: user.email } };
+  }
 }

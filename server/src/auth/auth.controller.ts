@@ -1,5 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { AuthGoogleInput } from '@finman/shared-contracts';
+import { Body, Controller, NotFoundException, Post } from '@nestjs/common';
+import { AuthGoogleInput, AuthDevInput } from '@finman/shared-contracts';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { AuthService } from './auth.service';
 
@@ -11,5 +11,12 @@ export class AuthController {
   @Post('google')
   async google(@Body(new ZodValidationPipe(AuthGoogleInput)) body: AuthGoogleInput) {
     return this.auth.authenticate(body.idToken);
+  }
+
+  /** POST /v1/auth/dev { deviceKey } → { token, user } — pilot only, env-gated (404 when disabled). */
+  @Post('dev')
+  async dev(@Body(new ZodValidationPipe(AuthDevInput)) body: AuthDevInput) {
+    if (process.env.ALLOW_DEV_AUTH !== 'true') throw new NotFoundException();
+    return this.auth.authenticateDev(body.deviceKey);
   }
 }
