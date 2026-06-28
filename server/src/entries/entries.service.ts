@@ -78,13 +78,24 @@ export class EntriesService {
       orderBy: { txnTime: 'desc' },
       take: 500,
     });
+    // human-readable label per line (bank + last-4) so the device drill-down never shows a raw UUID
+    const lines = await this.prisma.line.findMany({ where: { userId }, include: { instruments: true } });
+    const labelFor = (lineId: string): string => {
+      const l = lines.find((x) => x.id === lineId);
+      if (!l) return 'Account';
+      if (l.displayName) return l.displayName;
+      const last4 = l.instruments.find((i) => i.last4)?.last4;
+      return [l.issuer ?? 'Account', last4 ? `••${last4}` : ''].join(' ').trim();
+    };
     return rows.map((r) => ({
       id: r.id,
       lineId: r.lineId,
+      lineLabel: labelFor(r.lineId),
       direction: r.direction,
       modality: r.modality,
       amountCaptured: r.amountCaptured.toString(),
       amountEffective: r.amountEffective.toString(),
+      balanceAfter: r.balanceAfter?.toString() ?? null,
       categoryId: r.categoryId,
       merchantText: r.merchantText,
       txnTime: r.txnTime?.toISOString() ?? null,
