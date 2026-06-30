@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { PrismaService } from '../prisma/prisma.service';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { LineResolverService } from '../persistence/line-resolver.service';
 import { DevIngestService } from './dev-ingest.service';
 import { PORTAL_HTML } from './portal.html';
 
@@ -13,6 +14,9 @@ const DevIngestInput = z.object({
 });
 type DevIngestInput = z.infer<typeof DevIngestInput>;
 
+const DevKeyInput = z.object({ deviceKey: z.string().min(3).max(128) });
+type DevKeyInput = z.infer<typeof DevKeyInput>;
+
 /** DEV/TEST portal + endpoints (env-gated by ALLOW_DEV_AUTH). Not behind the JWT guard. */
 @Controller()
 export class DevController {
@@ -20,6 +24,7 @@ export class DevController {
     private readonly devIngest: DevIngestService,
     private readonly dashboard: DashboardService,
     private readonly prisma: PrismaService,
+    private readonly lines: LineResolverService,
   ) {}
 
   private gate() {
@@ -39,6 +44,15 @@ export class DevController {
   async ingest(@Body(new ZodValidationPipe(DevIngestInput)) body: DevIngestInput) {
     this.gate();
     return this.devIngest.ingest(body.deviceKey, body.sender, body.body);
+  }
+
+  /** One-time repair: collapse an issuer's fragmented bank lines into one (dev only, env-gated). */
+  @Post('dev/consolidate-bank-lines')
+  async consolidate(@Body(new ZodValidationPipe(DevKeyInput)) body: DevKeyInput) {
+    this.gate();
+    const user = await this.prisma.user.findUnique({ where: { googleSub: `dev:${body.deviceKey}` } });
+    if (!user) return { merged: 0 };
+    return this.lines.consolidateBankLines(user.id);
   }
 
   /** The three numbers for a device key (no JWT — dev only). */
